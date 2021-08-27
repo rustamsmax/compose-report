@@ -55,6 +55,7 @@ fun TestFocusWithDynamicContent() {
   val focusRequesters = (list.indices + 1).map { remember(it) { FocusRequester() } }
   Column {
     list.forEachIndexed { index, item ->
+      Log.d("ComposeItem", "composing $index")
       ComposeItem(
         item = item,
         isLastItem = index == list.lastIndex,
@@ -90,7 +91,10 @@ private fun ComposeItem(
       value = "",
       onValueChange = {
         onValueChange(it)
-        if (it.isNotEmpty()) addNew("")
+        if (it.isNotEmpty()) {
+          Log.d("ComposeItem", "onValueChange: $it")
+          addNew("")
+        }
       },
       placeholder = { Text(text = "type new item") }
     )
