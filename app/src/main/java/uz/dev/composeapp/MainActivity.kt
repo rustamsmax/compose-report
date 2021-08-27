@@ -5,17 +5,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color.Companion.Black
@@ -35,6 +39,7 @@ import androidx.compose.ui.layout.relocationRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uz.dev.composeapp.ui.theme.ComposeAppTheme
 import kotlin.math.abs
@@ -45,11 +50,64 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     setContent {
       ComposeAppTheme {
-        BringPartOfComposableIntoViewSample()
+        Column {
+          TestFocusWithDynamicContent()
+        }
       }
     }
   }
 }
+
+@Composable
+fun TestFocusWithDynamicContent() {
+  val list = remember { mutableStateListOf("") }
+  val focusRequesters = list.indices.map { remember(it) { FocusRequester() } }
+  Column {
+    list.forEachIndexed { index, item ->
+      if (index != list.lastIndex) {
+        OutlinedTextField(
+          value = item,
+          onValueChange = {
+            list[index] = it
+            if (index == list.lastIndex && it.isNotEmpty()) list.add("")
+          },
+          modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequesters[index])
+            .relocate("$index"),
+          placeholder = { Text(text = "type anything") }
+        )
+      }
+      else {
+        OutlinedTextField(
+          value = "",
+          onValueChange = {
+            if (index == list.lastIndex && it.isNotEmpty()) list.add("")
+          }
+        )
+      }
+    }
+
+  }
+}
+
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.relocate(key: Any, rootRect: Rect? = null): Modifier =
+  composed {
+    val scope = rememberCoroutineScope()
+    val relocationRequester = remember(key) { RelocationRequester() }
+    this
+      .relocationRequester(relocationRequester)
+      .onFocusEvent { state ->
+        if (state.isFocused) {
+          scope.launch {
+            relocationRequester.bringIntoView(rootRect)
+
+          }
+        }
+      }
+  }
 
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -103,7 +161,7 @@ fun BringPartOfComposableIntoViewSample() {
         Modifier
           .border(2.dp, Black)
           .size(500f.toDp())
-          .horizontalScroll(rememberScrollState())
+          .horizontalScrollWithRelocation(rememberScrollState())
       ) {
         Canvas(
           Modifier
@@ -131,11 +189,12 @@ fun BringPartOfComposableIntoViewSample() {
   }
 }
 
+
 // This is a helper function that users will have to use since experimental "ui" API cannot be used
 // inside Scrollable, which is ihe "foundation" package. After onRelocationRequest is added
 // to Scrollable, users can use Modifier.horizontalScroll directly.
 @OptIn(ExperimentalComposeUiApi::class)
-private fun Modifier.horizontalScrollWithRelocation(
+private fun Modifier.horizontalScrollWithRelocation2(
   state: ScrollState,
   enabled: Boolean = true,
   flingBehavior: FlingBehavior? = null,
@@ -155,6 +214,45 @@ private fun Modifier.horizontalScrollWithRelocation(
     .horizontalScroll(state, enabled, flingBehavior, reverseScrolling)
 }
 
+// This is a helper function that users will have to use since experimental "ui" API cannot be used
+// inside Scrollable, which is ihe "foundation" package. After onRelocationRequest is added
+// to Scrollable, users can use Modifier.horizontalScroll directly.
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.horizontalScrollWithRelocation(
+  state: ScrollState,
+  enabled: Boolean = true,
+  flingBehavior: FlingBehavior? = null,
+  reverseScrolling: Boolean = false
+): Modifier {
+  return this
+    .relocationScrollable(
+      scrollableState = state,
+      orientation = Orientation.Horizontal,
+      reverseDirection = reverseScrolling
+    )
+    .horizontalScroll(state, enabled, flingBehavior, reverseScrolling)
+}
+
+// This is a helper function that users will have to use since experimental "ui" API cannot be used
+// inside Scrollable, which is ihe "foundation" package. After onRelocationRequest is added
+// to Scrollable, users can use Modifier.horizontalScroll directly.
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.verticalScrollWithRelocation(
+  state: ScrollState,
+  enabled: Boolean = true,
+  flingBehavior: FlingBehavior? = null,
+  reverseScrolling: Boolean = false
+): Modifier {
+  return this
+    .relocationScrollable(
+      scrollableState = state,
+      orientation = Orientation.Vertical,
+      reverseDirection = reverseScrolling
+    )
+    .verticalScroll(state, enabled, flingBehavior, reverseScrolling)
+}
+
+
 // Calculate the offset needed to bring one of the edges into view. The leadingEdge is the side
 // closest to the origin (For the x-axis this is 'left', for the y-axis this is 'top').
 // The trailing edge is the other side (For the x-axis this is 'right', for the y-axis this is
@@ -169,4 +267,31 @@ private fun relocationDistance(leadingEdge: Float, trailingEdge: Float, parentSi
   // Find the minimum scroll needed to make one of the edges coincide with the parent's edge.
   abs(leadingEdge) < abs(trailingEdge - parentSize) -> leadingEdge
   else -> trailingEdge - parentSize
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.relocationScrollable(
+  scrollableState: ScrollableState,
+  orientation: Orientation,
+  reverseDirection: Boolean = false
+): Modifier {
+  fun Float.reverseIfNeeded(): Float = if (reverseDirection) this * -1 else this
+  return this.onRelocationRequest(
+    onProvideDestination = { rect, layoutCoordinates ->
+      val size = layoutCoordinates.size.toSize()
+      when (orientation) {
+        Orientation.Vertical ->
+          rect.translate(0f, relocationDistance(rect.top, rect.bottom, size.height))
+        Orientation.Horizontal ->
+          rect.translate(relocationDistance(rect.left, rect.right, size.width), 0f)
+      }
+    },
+    onPerformRelocation = { source, destination ->
+      val offset = when (orientation) {
+        Orientation.Vertical -> -(source.top - destination.top)
+        Orientation.Horizontal -> -(source.left - destination.left)
+      }
+      scrollableState.animateScrollBy(offset.reverseIfNeeded())
+    }
+  )
 }
