@@ -1,6 +1,7 @@
 package uz.dev.composeapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
@@ -23,23 +24,13 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.Color.Companion.Blue
-import androidx.compose.ui.graphics.Color.Companion.Cyan
-import androidx.compose.ui.graphics.Color.Companion.DarkGray
-import androidx.compose.ui.graphics.Color.Companion.Gray
-import androidx.compose.ui.graphics.Color.Companion.Green
-import androidx.compose.ui.graphics.Color.Companion.LightGray
-import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.graphics.Color.Companion.Red
-import androidx.compose.ui.graphics.Color.Companion.White
-import androidx.compose.ui.graphics.Color.Companion.Yellow
 import androidx.compose.ui.layout.RelocationRequester
 import androidx.compose.ui.layout.onRelocationRequest
 import androidx.compose.ui.layout.relocationRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uz.dev.composeapp.ui.theme.ComposeAppTheme
 import kotlin.math.abs
@@ -61,33 +52,48 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TestFocusWithDynamicContent() {
   val list = remember { mutableStateListOf("") }
-  val focusRequesters = list.indices.map { remember(it) { FocusRequester() } }
+  val focusRequesters = (list.indices + 1).map { remember(it) { FocusRequester() } }
   Column {
     list.forEachIndexed { index, item ->
-      if (index != list.lastIndex) {
-        OutlinedTextField(
-          value = item,
-          onValueChange = {
-            list[index] = it
-            if (index == list.lastIndex && it.isNotEmpty()) list.add("")
-          },
-          modifier = Modifier
-            .fillMaxWidth()
-            .focusRequester(focusRequesters[index])
-            .relocate("$index"),
-          placeholder = { Text(text = "type anything") }
-        )
-      }
-      else {
-        OutlinedTextField(
-          value = "",
-          onValueChange = {
-            if (index == list.lastIndex && it.isNotEmpty()) list.add("")
-          }
-        )
-      }
+      ComposeItem(
+        item = item,
+        isLastItem = index == list.lastIndex,
+        onValueChange = { list[index] = it },
+        addNew = list::add,
+        focusRequester = focusRequesters[index]
+      )
     }
+  }
+}
 
+@Composable
+private fun ComposeItem(
+  item: String,
+  isLastItem: Boolean,
+  onValueChange: (String) -> Unit,
+  addNew: (String) -> Unit,
+  focusRequester: FocusRequester
+) {
+  if (!isLastItem) {
+    OutlinedTextField(
+      value = item,
+      onValueChange = {
+        onValueChange(it)
+      },
+      modifier = Modifier
+        .fillMaxWidth()
+        .focusRequester(focusRequester),
+      placeholder = { Text(text = "type anything") }
+    )
+  } else {
+    OutlinedTextField(
+      value = "",
+      onValueChange = {
+        onValueChange(it)
+        if (it.isNotEmpty()) addNew("")
+      },
+      placeholder = { Text(text = "type new item") }
+    )
   }
 }
 
