@@ -89,7 +89,7 @@ fun AuthenticationContent() {
                 Text(
                     text = stringResource(id = R.string.label_greeting),
                     style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.SemiBold)
-                )829
+                )
 
                 Text(
                     modifier = Modifier
