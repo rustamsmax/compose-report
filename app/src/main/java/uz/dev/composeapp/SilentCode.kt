@@ -104,8 +104,8 @@ fun AuthenticationContent() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-//                        .focusable()
-//                        .relocate()
+                        .focusable()
+                        .relocate()
                        /* .onGloballyPositioned {
                             visibleArea = it.size
                                 .toSize()
@@ -126,7 +126,7 @@ fun AuthenticationContent() {
 
                     TextField(
                         modifier = Modifier
-                            .relocate(/*visibleArea*/)
+//                            .relocate(/*visibleArea*/)
                             .padding(top = 32.dp),
                         value = state.phoneNumber,
                         onValueChange = { phoneNumber ->
@@ -142,7 +142,7 @@ fun AuthenticationContent() {
 
                     TextField(
                         modifier = Modifier
-                            .relocate(/*visibleArea*/)
+//                            .relocate(/*visibleArea*/)
                             .padding(top = 16.dp),
                         value = state.password,
                         onValueChange = { password ->
