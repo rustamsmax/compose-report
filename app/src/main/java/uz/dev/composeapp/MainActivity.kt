@@ -31,6 +31,9 @@ import androidx.compose.ui.layout.relocationRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.core.view.WindowCompat
+import com.google.accompanist.insets.ProvideWindowInsets
+import com.google.accompanist.insets.systemBarsPadding
 import kotlinx.coroutines.launch
 import uz.dev.composeapp.ui.theme.ComposeAppTheme
 import kotlin.math.abs
@@ -39,10 +42,15 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+
     setContent {
-      ComposeAppTheme {
-        Column {
-          TestFocusWithDynamicContent()
+      ProvideWindowInsets {
+        ComposeAppTheme {
+          Box(modifier = Modifier.systemBarsPadding()) {
+            AuthenticationContent()
+          }
         }
       }
     }
@@ -51,17 +59,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TestFocusWithDynamicContent() {
-  val list = remember { mutableStateListOf("") }
-  val focusRequesters = (list.indices + 1).map { remember(it) { FocusRequester() } }
+  val list = remember { mutableStateListOf("one", "two", "three", "four", "five", "siz", "seven", "eight") }
+  val itemsAndFocuses = (list.indices + 1).map { remember(it) { list.getOrNull(it) to FocusRequester() } }
   Column {
-    list.forEachIndexed { index, item ->
+    itemsAndFocuses.forEachIndexed { index, item ->
       Log.d("ComposeItem", "composing $index")
       ComposeItem(
-        item = item,
+        item = item.first ?: "",
         isLastItem = index == list.lastIndex,
         onValueChange = { list[index] = it },
         addNew = list::add,
-        focusRequester = focusRequesters[index]
+        focusRequester = item.second
       )
     }
   }
@@ -75,6 +83,16 @@ private fun ComposeItem(
   addNew: (String) -> Unit,
   focusRequester: FocusRequester
 ) {
+  OutlinedTextField(
+    value = item,
+    onValueChange = {
+      onValueChange(it)
+    },
+    modifier = Modifier
+      .fillMaxWidth()
+      .focusRequester(focusRequester),
+    placeholder = { Text(text = "type anything") }
+  )
   if (!isLastItem) {
     OutlinedTextField(
       value = item,

@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Compose App</string>
+    <string name="label_greeting">Welcome to Pilikkan app</string>
+    <string name="label_enter_to_continue">Sign in to continue</string>
+    <string name="label_phone_number">Phone number</string>
+    <string name="label_phone_number_placeholder">+998</string>
+    <string name="label_password">Password</string>
+    <string name="label_password_placeholder">Enter a valid password</string>
+    <string name="label_login">Login</string>
+    <string name="label_login_via_sms">Login via SMS</string>
+    <string name="label_registration_part_1">Not registered yet?</string>
+    <string name="label_registration_part_tag">Sign up</string>
+    <string name="label_registration_part_2">some extra info</string>
+    <string name="label_auth_title">Login Page</string>
 </resources>
